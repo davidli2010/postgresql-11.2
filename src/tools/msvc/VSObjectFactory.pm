@@ -55,12 +55,13 @@ sub CreateSolution
 	{
 		return new VS2015Solution(@_);
 	}
-
-	# visual 2017 hasn't changed the nmake version to 15, so adjust the check to support it.
-	elsif (($visualStudioVersion ge '14.10')
-		or ($visualStudioVersion eq '15.00'))
+	elsif ($visualStudioVersion eq '15.00')
 	{
 		return new VS2017Solution(@_);
+	}
+	elsif ($visualStudioVersion eq '16.00')
+	{
+		return new VS2019Solution(@_);
 	}
 	else
 	{
@@ -102,12 +103,13 @@ sub CreateProject
 	{
 		return new VC2015Project(@_);
 	}
-
-	# visual 2017 hasn't changed the nmake version to 15, so adjust the check to support it.
-	elsif (($visualStudioVersion ge '14.10')
-		or ($visualStudioVersion eq '15.00'))
+	elsif ($visualStudioVersion eq '15.00')
 	{
 		return new VC2017Project(@_);
+	}
+	elsif ($visualStudioVersion eq '16.00')
+	{
+		return new VC2019Project(@_);
 	}
 	else
 	{
@@ -126,7 +128,7 @@ sub DetermineVisualStudioVersion
 	$? >> 8 == 0
 	  or croak
 	  "Unable to determine Visual Studio version: The nmake command wasn't found.";
-	if ($output =~ /(\d+)\.(\d+)\.\d+(\.\d+)?$/m)
+	if ($output =~ /(\d+)\.(\d+)\.\d+(\.\d+).*$/m)
 	{
 		return _GetVisualStudioVersion($1, $2);
 	}
@@ -139,18 +141,30 @@ sub _GetVisualStudioVersion
 {
 	my ($major, $minor) = @_;
 
-	# visual 2017 hasn't changed the nmake version to 15, so still using the older version for comparison.
-	if ($major > 14)
+	# visual 2017/2019 hasn't changed the nmake version to 15/16.
+	if ($major == 14)
+	{
+		if ($minor == 10)
+		{
+			return '15.00';
+		}
+		elsif ($minor >= 20)
+		{
+			return '16.00';
+		}
+	}
+	elsif ($major > 14)
 	{
 		carp
 		  "The determined version of Visual Studio is newer than the latest supported version. Returning the latest supported version instead.";
-		return '14.00';
+		return '16.00';
 	}
 	elsif ($major < 6)
 	{
 		croak
 		  "Unable to determine Visual Studio version: Visual Studio versions before 6.0 aren't supported.";
 	}
+
 	return "$major.$minor";
 }
 
